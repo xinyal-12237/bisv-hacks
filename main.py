@@ -1,39 +1,45 @@
-from flask import Flask, render_template, url_for, redirect, request
-from flask_wtf import FlaskForm
-from wtforms.validators import DataRequired, Length
-from wtforms import SubmitField, FileField, EmailField, StringField, PasswordField
-from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy.orm import DeclarativeBase, relationship
-from werkzeug.security import generate_password_hash, check_password_hash
-from flask_bootstrap import Bootstrap5
-from werkzeug.utils import secure_filename
-from dotenv import load_dotenv
-import os
-from io import BytesIO
-import logging
-logging.basicConfig(level=logging.INFO)
-logging.info("Starting Flask app")
-
-load_dotenv()
-
-import requests
-from elevenlabs.client import ElevenLabs
-from elevenlabs.play import play
-
-
-class Base(DeclarativeBase):
-    pass
-
-db = SQLAlchemy(model_class=Base)
-
-app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///./potatopotato.db'
-app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
-featherlessapikey = os.getenv('FEATHERLESS_API_KEY')
-elevenlabsapikey = os.getenv('ELEVENLABS_API_KEY')
-
-db.init_app(app)
-bootstrap = Bootstrap5(app)
+import sys, traceback
+try:
+    from flask import Flask, render_template, url_for, redirect, request
+    from flask_wtf import FlaskForm
+    from wtforms.validators import DataRequired, Length
+    from wtforms import SubmitField, FileField, EmailField, StringField, PasswordField
+    from flask_sqlalchemy import SQLAlchemy
+    from sqlalchemy.orm import DeclarativeBase, relationship
+    from werkzeug.security import generate_password_hash, check_password_hash
+    from flask_bootstrap import Bootstrap5
+    from werkzeug.utils import secure_filename
+    from dotenv import load_dotenv
+    import os
+    from io import BytesIO
+    import logging
+    logging.basicConfig(level=logging.INFO)
+    logging.info("Starting Flask app")
+    
+    load_dotenv()
+    
+    import requests
+    from elevenlabs.client import ElevenLabs
+    from elevenlabs.play import play
+    
+    
+    class Base(DeclarativeBase):
+        pass
+    
+    db = SQLAlchemy(model_class=Base)
+    
+    app = Flask(__name__)
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///./potatopotato.db'
+    app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
+    featherlessapikey = os.getenv('FEATHERLESS_API_KEY')
+    elevenlabsapikey = os.getenv('ELEVENLABS_API_KEY')
+    
+    db.init_app(app)
+    bootstrap = Bootstrap5(app)
+except Exception:
+    print("ERROR DURING IMPORT", file=sys.stderr)
+    traceback.print_exc()
+    raise
 
 class SignupForm(FlaskForm):
     email = EmailField('email', validators=[DataRequired()])
