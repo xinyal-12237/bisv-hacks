@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Speech Upload</title>
+</head>
+<body>
+    <h2>Record and Upload Speech</h2>
+
+    <button id="recordBtn">Start Recording</button>
+    <button id="stopBtn" disabled>Stop Recording</button>
+
+    <form id="uploadForm" method="POST" enctype="multipart/form-data">
+        <input type="file" name="audio" id="audioInput" style="display:none">
+        <button type="submit">Upload & Transcribe</button>
+    </form>
+
+    <h3>Transcription:</h3>
+    <p>{{ transcription.text }}</p>
+
+    {% if url %}
+        <h3>Audio File:</h3>
+        <audio controls>
+            <source src="{{ url }}" type="audio/wav">
+            Your browser does not support the audio element.
+        </audio>
+        <p>Direct URL: <a href="{{ url }}" target="_blank">{{ url }}</a></p>
+    {% endif %}
+
+    <script>
+        let mediaRecorder;
+        let audioChunks = [];
+
+        const recordBtn = document.getElementById("recordBtn");
+        const stopBtn = document.getElementById("stopBtn");
+        const audioInput = document.getElementById("audioInput");
+
+        recordBtn.onclick = async () => {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            mediaRecorder = new MediaRecorder(stream);
+            audioChunks = [];
+
+            mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+            mediaRecorder.start();
+
+            recordBtn.disabled = true;
+            stopBtn.disabled = false;
+        };
+
+        stopBtn.onclick = () => {
+            mediaRecorder.stop();
+            stopBtn.disabled = true;
+            recordBtn.disabled = false;
+
+            mediaRecorder.onstop = () => {
+                const blob = new Blob(audioChunks, { type: 'audio/wav' });
+                const file = new File([blob], "speech.wav", { type: "audio/wav" });
+                const container = new DataTransfer();
+                container.items.add(file);
+                audioInput.files = container.files;
+            };
+        };
+    </script>
+</body>
+</html>
