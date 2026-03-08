@@ -8,5 +8,5 @@ sqlalchemy
 flask_sqlalchemy
 flask_bootstrap
 dotenv
-os
-io
+
+
