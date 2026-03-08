@@ -7,7 +7,13 @@ from sqlalchemy.orm import DeclarativeBase, relationship
 from werkzeug.security import generate_password_hash, check_password_hash
 import secrets
 from flask_bootstrap import Bootstrap5
+from werkzeug.utils import secure_filename
+from dotenv import load_dotenv
 import os
+from io import BytesIO
+
+load_dotenv()
+
 import requests
 from elevenlabs.client import ElevenLabs
 from elevenlabs.play import play
@@ -18,12 +24,14 @@ class Base(DeclarativeBase):
 
 db = SQLAlchemy(model_class=Base)
 
+
+
 app = Flask(__name__)
-secret_key = secrets.token_urlsafe(64)
-app.config['SECRET_KEY'] = secret_key
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///potatopotato.db'
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
 featherlessapikey = os.getenv('FEATHERLESS_API_KEY')
 elevenlabsapikey = os.getenv('ELEVENLABS_API_KEY')
+
 db.init_app(app)
 bootstrap = Bootstrap5(app)
 
@@ -77,6 +85,7 @@ def signup():
         return redirect(url_for('login'))
     return render_template('signup.html', form=form)
 
+
 @app.route("/")
 def index():
     return "potato"
@@ -84,7 +93,8 @@ def index():
 @app.route("/home")
 def home():
     userid = request.args.get('userid')
-    return render_template("home.html")
+    user = User.query.filter_by(id=userid).first()
+    return render_template("home.html", username = user.username, userid =userid)
 
 @app.route("/translation", methods=['GET', 'POST'])
 def translation():
@@ -108,6 +118,7 @@ def translation():
                 ]
             }
         )
+        print(response.json())
         message = response.json()['choices'][0]['message']['content']
         print(message)
         apikeyforelevenlabs = elevenlabsapikey
@@ -124,6 +135,39 @@ def translation():
         play(audio)
 
     return render_template("translation.html", form=form)
+
+@app.route('/speechupload', methods=['GET', 'POST'])
+def speechupload():
+    elevenlabs = ElevenLabs(
+        api_key=elevenlabsapikey,
+    )
+    UPLOAD_FOLDER = os.path.join('static','uploads')
+    os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+    if request.method == 'POST':
+        audiofile = request.files.get('audio')
+        if audiofile:
+            afilename = secure_filename(audiofile.filename)
+            filepath = os.path.join(UPLOAD_FOLDER, afilename)
+            audiofile.save(filepath)
+
+            url = url_for('static', filename=f'uploads/{afilename}')
+            with open(filepath, 'rb') as f:
+                audiodata = BytesIO(f.read())
+
+            transcription = elevenlabs.speech_to_text.convert(
+                file=audiodata,
+                model_id="scribe_v2",  # Model to use
+                tag_audio_events=True,  # Tag audio events like laughter, applause, etc.
+                # Language of the audio file. If set to None, the model will detect the language automatically.
+                diarize=True,  # Whether to annotate who is speaking
+            )
+            print(transcription.text)
+            return render_template('speech.html', transcription=transcription, url=url)
+        else:
+            print("did not work")
+            return render_template('speech.html')
+    else:
+        return render_template('speech.html')
 
 with app.app_context():
     db.create_all()
