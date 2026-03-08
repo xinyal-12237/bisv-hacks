@@ -8,5 +8,5 @@ sqlalchemy
 flask_sqlalchemy
 bootstrap_flask
 dotenv
-
+gunicorn
 
