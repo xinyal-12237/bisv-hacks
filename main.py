@@ -217,6 +217,12 @@ def savedtranslations():
     thingy = SavedTranslations.query.filter_by(userid=userid).all()
     return render_template('savedtranslations.html', userid=userid, saved_translations= thingy)
 
+@app.route('/saved_transcriptions')
+def saved_transcriptions():
+    userid = request.args.get('userid')
+    thingy = SavedTranslations.query.filter_by(userid=userid).all()
+    return render_template('savedtranslations.html', userid=userid, saved_translations=thingy)
+
 with app.app_context():
     db.create_all()
 # translator app so that if you dont understand the lang u can use the app to say it
