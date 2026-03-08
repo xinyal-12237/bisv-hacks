@@ -127,7 +127,7 @@ def translation():
             output_format="mp3_44100_128",
         )
 
-        play(audio)
+        
         return render_template('translation.html', form=form, message=message, userid=userid)
 
     return render_template("translation.html", form=form, userid=userid)
