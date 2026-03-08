@@ -6,7 +6,7 @@ requests
 elevenlabs
 sqlalchemy
 flask_sqlalchemy
-flask_bootstrap
+bootstrap_flask
 dotenv
 
 
