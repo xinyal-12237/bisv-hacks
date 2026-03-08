@@ -10,6 +10,9 @@ from werkzeug.utils import secure_filename
 from dotenv import load_dotenv
 import os
 from io import BytesIO
+import logging
+logging.basicConfig(level=logging.INFO)
+logging.info("Starting Flask app")
 
 load_dotenv()
 
