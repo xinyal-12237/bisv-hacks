@@ -5,7 +5,6 @@ from wtforms import SubmitField, FileField, EmailField, StringField, PasswordFie
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import DeclarativeBase, relationship
 from werkzeug.security import generate_password_hash, check_password_hash
-import secrets
 from flask_bootstrap import Bootstrap5
 from werkzeug.utils import secure_filename
 from dotenv import load_dotenv
@@ -23,8 +22,6 @@ class Base(DeclarativeBase):
     pass
 
 db = SQLAlchemy(model_class=Base)
-
-
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///potatopotato.db'
@@ -67,6 +64,14 @@ class User(db.Model):
     email = db.Column(db.String(120), unique=True, nullable=False)
     password = db.Column(db.String(60), nullable=False)
 
+class SavedTranslations(db.Model):
+    id = db.Column(db.Integer, primary_key=True, unique=True)
+    langinput = db.Column(db.String(120), nullable=False)
+    wordinput = db.Column(db.String(120), nullable=False)
+    langoutput = db.Column(db.String(120), nullable=False)
+    wordoutput = db.Column(db.String(120), nullable=False)
+    userid = db.Column(db.Integer, nullable=False)
+    submit = SubmitField('save')
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -104,6 +109,7 @@ def home():
 @app.route("/translation", methods=['GET', 'POST'])
 def translation():
     form = ThingsYouWantToTranslate()
+    userid = request.args.get('userid')
     if form.validate_on_submit():
         apikey = featherlessapikey
         data = form.message.data
@@ -122,9 +128,9 @@ def translation():
         )
 
         play(audio)
-        return render_template('translation.html', form=form, message=message)
+        return render_template('translation.html', form=form, message=message, userid=userid)
 
-    return render_template("translation.html", form=form)
+    return render_template("translation.html", form=form, userid=userid)
 
 def translate(apikey, langinput, langoutput, message):
     response = requests.post(
@@ -149,11 +155,12 @@ def translate(apikey, langinput, langoutput, message):
 @app.route('/picklang', methods=['GET', 'POST'])
 def picklang():
     form = LanginputForm()
+    userid = request.args.get('userid')
     if form.validate_on_submit():
         langoutput = form.langoutput.data
         langinput = form.langinput.data
-        return redirect(url_for('speechupload', langoutput=langoutput, langinput=langinput))
-    return render_template('picklang.html', form=form)
+        return redirect(url_for('speechupload', langoutput=langoutput, langinput=langinput, userid=userid))
+    return render_template('picklang.html', form=form, userid=userid)
 
 @app.route('/speechupload', methods=['GET', 'POST'])
 def speechupload():
@@ -161,6 +168,7 @@ def speechupload():
         api_key=elevenlabsapikey,
     )
     apikey = featherlessapikey
+    userid = request.args.get('userid')
     UPLOAD_FOLDER = os.path.join('static','uploads')
     os.makedirs(UPLOAD_FOLDER, exist_ok=True)
     langoutput = request.args.get('langoutput')
@@ -185,12 +193,29 @@ def speechupload():
             )
             print(transcription.text)
             translatedtext = translate(apikey, langinput, langoutput, transcription.text)
-            return render_template('speech.html', transcription=transcription.text, url=url, translatedtext=translatedtext)
+            return render_template('speech.html', transcription=transcription.text, url=url, translatedtext=translatedtext, userid=userid, langinput=langinput, langoutput=langoutput)
         else:
             print("did not work")
             return render_template('speech.html')
     else:
         return render_template('speech.html')
+
+def save_translations(userid, langinput, wordinput, langoutput, wordoutput):
+    patata = SavedTranslations(
+        wordoutput=wordoutput, userid=userid, langinput=langinput, langoutput=langoutput, wordinput=wordinput)
+    db.session.add(patata)
+    db.session.commit()
+
+@app.route('/savedtranslations', methods=['GET', 'POST'])
+def savedtranslations():
+    userid = request.args.get('userid')
+    langinput = request.args.get('langinput')
+    wordinput = request.args.get('wordinput')
+    langoutput = request.args.get('langoutput')
+    wordoutput = request.args.get('wordoutput')
+    save_translations(userid, langinput, wordinput, langoutput, wordoutput)
+    thingy = SavedTranslations.query.filter_by(userid=userid).all()
+    return render_template('savedtranslations.html', userid=userid, saved_translations= thingy)
 
 with app.app_context():
     db.create_all()
