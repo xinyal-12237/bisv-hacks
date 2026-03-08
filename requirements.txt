@@ -1,0 +1,12 @@
+flask
+flask-wtf
+wtforms
+python-dotenv
+requests
+elevenlabs
+sqlalchemy
+flask_sqlalchemy
+flask_bootstrap
+dotenv
+os
+io
