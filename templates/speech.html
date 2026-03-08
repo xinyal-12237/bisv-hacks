@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Speech Upload</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+</head>
+<body>
+    <div class="container mt-5">
+        <div class="card p-4 shadow-lg mx-auto" style="max-width: 400px;">
+            <h2>Record and Upload Speech</h2>
+
+            <button id="recordBtn" class="btn btn-primary p-2 m-2">Start Recording</button>
+            <button id="stopBtn" disabled class="btn btn-primary p-2 m-2">Stop Recording</button>
+
+            <form id="uploadForm" method="POST" enctype="multipart/form-data">
+                <input type="file" name="audio" id="audioInput" style="display:none">
+                <button type="submit" class="btn btn-primary m-2">Upload & Transcribe</button>
+            </form>
+
+            <button class="btn btn-secondary m-2"><a href="{{ url_for('home', userid=userid) }}">Home</a></button>
+        </div>
+    </div>
+    <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h1 class="modal-title fs-5" id="exampleModalLabel">Translated</h1>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <h3>Transcription:</h3>
+            <p>{{ transcription }}</p>
+            <h3>Translation:</h3>
+            <p>{{ translatedtext }}</p>
+
+            {% if url %}
+                <h3>Audio File:</h3>
+                <audio controls>
+                    <source src="{{ url }}" type="audio/wav">
+                    Your browser does not support the audio element.
+                </audio>
+            {% endif %}
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            <button type="button" class="btn btn-primary"><a href="{{ url_for('savedtranslations', userid=userid, langinput=langinput, langoutput=langoutput, audiofile=url, wordinput=transcription, wordoutput=translatedtext) }}">Save to Translations</a></button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+        let mediaRecorder;
+        let audioChunks = [];
+
+        const recordBtn = document.getElementById("recordBtn");
+        const stopBtn = document.getElementById("stopBtn");
+        const audioInput = document.getElementById("audioInput");
+
+        recordBtn.onclick = async () => {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            mediaRecorder = new MediaRecorder(stream);
+            audioChunks = [];
+
+            mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+            mediaRecorder.start();
+
+            recordBtn.disabled = true;
+            stopBtn.disabled = false;
+        };
+
+        stopBtn.onclick = () => {
+            mediaRecorder.stop();
+            stopBtn.disabled = true;
+            recordBtn.disabled = false;
+
+            mediaRecorder.onstop = () => {
+                const blob = new Blob(audioChunks, { type: 'audio/wav' });
+                const file = new File([blob], "speech.wav", { type: "audio/wav" });
+                const container = new DataTransfer();
+                container.items.add(file);
+                audioInput.files = container.files;
+            };
+        };
+    </script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const transcription = "{{ transcription }}";
+            if (transcription && transcription.trim() !== "") {
+                const modal = new bootstrap.Modal(document.getElementById('exampleModal'));
+                modal.show();
+            }
+        });
+    </script>
+    <script>
+        document.getElementById("uploadForm").addEventListener("submit", function(){
+            const btn = document.getElementById("uploadBtn");
+            btn.innerHTML = "Processing...";
+            btn.disabled = true;
+        });
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
+</body>
+</html>
