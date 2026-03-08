@@ -228,4 +228,5 @@ with app.app_context():
 # translator app so that if you dont understand the lang u can use the app to say it
 # so you input some text in ur native lnag and u click and it speaks text in the lang u awnt it to say
 if __name__ == '__main__':
-    app.run(debug=True)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
