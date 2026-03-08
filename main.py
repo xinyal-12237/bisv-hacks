@@ -24,7 +24,7 @@ class Base(DeclarativeBase):
 db = SQLAlchemy(model_class=Base)
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///potatopotato.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///./potatopotato.db'
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
 featherlessapikey = os.getenv('FEATHERLESS_API_KEY')
 elevenlabsapikey = os.getenv('ELEVENLABS_API_KEY')
