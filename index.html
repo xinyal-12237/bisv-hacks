@@ -25,7 +25,7 @@
     <div class="container mt-5 text-center">
 
         <!-- Greeting -->
-        <h2>Hi {{ username }} :D</h2>
+        <h2>Hi :D</h2>
         
         <!-- Intro / Advertisement Card -->
         <div class="intro-card mt-4 mb-4 mx-auto col-md-8">
@@ -37,10 +37,8 @@
 
         <!-- Action Buttons -->
         <div class="button-group">
-            <a class="btn btn-primary" href="{{ url_for('translation', userid=userid) }}" role="button">Translate</a>
-            <a class="btn btn-primary" href="{{ url_for('picklang', userid=userid) }}" role="button">Transcribe</a>
-            <a class="btn btn-success" href="{{ url_for('login') }}" role="button">Log In</a>
-            <a class="btn btn-outline-success" href="{{ url_for('signup') }}" role="button">Sign Up</a>
+            <a class="btn btn-success m-2" href="{{ url_for('login') }}" role="button">Log In</a>
+            <a class="btn btn-outline-success m-2" href="{{ url_for('signup') }}" role="button">Sign Up</a>
         </div>
 
     </div>
