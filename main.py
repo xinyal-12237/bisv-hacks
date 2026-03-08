@@ -52,9 +52,14 @@ class LoginForm(FlaskForm):
 
 class ThingsYouWantToTranslate(FlaskForm):
     message = StringField('message', validators=[DataRequired()])
-    languagetyped = StringField('What language are you writing in?', validators=[DataRequired()])
+    langinput = StringField('What language do you want to input', validators=[DataRequired()])
     langoutput = StringField('What language do you want to output', validators=[DataRequired()])
     submit = SubmitField('translate')
+
+class LanginputForm(FlaskForm):
+    langinput = StringField('Input language', validators=[DataRequired()])
+    langoutput = StringField('output language', validators=[DataRequired()])
+    submit = SubmitField('transcribe and translate')
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True, unique=True)
@@ -88,7 +93,7 @@ def signup():
 
 @app.route("/")
 def index():
-    return "potato"
+    return render_template('index.html')
 
 @app.route("/home")
 def home():
@@ -102,25 +107,9 @@ def translation():
     if form.validate_on_submit():
         apikey = featherlessapikey
         data = form.message.data
-        langinptu = form.languagetyped.data
+        langinput = form.langinput.data
         langoutput = form.langoutput.data
-        response = requests.post(
-            url="https://api.featherless.ai/v1/chat/completions",
-            headers={
-                'Content-Type': 'application/json',
-                'Authorization': f"Bearer {apikey}"
-            },
-            json={
-                'model': "Qwen/Qwen2.5-7B-Instruct",
-                "messages": [
-                    {'role':'system',"content": "you are a helpful translator that is extremely skilled"},
-                    {'role':'user',"content": f"Hello! can you please translate {data} from {langinptu} to {langoutput}? thank you so much, but only translate it, no additional sure or ok"}
-                ]
-            }
-        )
-        print(response.json())
-        message = response.json()['choices'][0]['message']['content']
-        print(message)
+        message = translate(apikey,langinput, langoutput, data)
         apikeyforelevenlabs = elevenlabsapikey
         client = ElevenLabs(
             api_key = apikeyforelevenlabs,
@@ -133,16 +122,49 @@ def translation():
         )
 
         play(audio)
+        return render_template('translation.html', form=form, message=message)
 
     return render_template("translation.html", form=form)
+
+def translate(apikey, langinput, langoutput, message):
+    response = requests.post(
+        url="https://api.featherless.ai/v1/chat/completions",
+        headers={
+            'Content-Type': 'application/json',
+            'Authorization': f"Bearer {apikey}"
+        },
+        json={
+            'model': "Qwen/Qwen2.5-7B-Instruct",
+            "messages": [
+                {'role': 'system', "content": "you are a helpful translator that is extremely skilled"},
+                {'role': 'user',
+                 "content": f"Hello! can you please translate {message} from {langinput} to {langoutput}? thank you so much, but only translate it, no additional sure or ok"}
+            ]
+        }
+    )
+    print(response.json())
+    message = response.json()['choices'][0]['message']['content']
+    return message
+
+@app.route('/picklang', methods=['GET', 'POST'])
+def picklang():
+    form = LanginputForm()
+    if form.validate_on_submit():
+        langoutput = form.langoutput.data
+        langinput = form.langinput.data
+        return redirect(url_for('speechupload', langoutput=langoutput, langinput=langinput))
+    return render_template('picklang.html', form=form)
 
 @app.route('/speechupload', methods=['GET', 'POST'])
 def speechupload():
     elevenlabs = ElevenLabs(
         api_key=elevenlabsapikey,
     )
+    apikey = featherlessapikey
     UPLOAD_FOLDER = os.path.join('static','uploads')
     os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+    langoutput = request.args.get('langoutput')
+    langinput = request.args.get('langinput')
     if request.method == 'POST':
         audiofile = request.files.get('audio')
         if audiofile:
@@ -162,7 +184,8 @@ def speechupload():
                 diarize=True,  # Whether to annotate who is speaking
             )
             print(transcription.text)
-            return render_template('speech.html', transcription=transcription, url=url)
+            translatedtext = translate(apikey, langinput, langoutput, transcription.text)
+            return render_template('speech.html', transcription=transcription.text, url=url, translatedtext=translatedtext)
         else:
             print("did not work")
             return render_template('speech.html')
