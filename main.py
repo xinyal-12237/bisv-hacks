@@ -9,6 +9,9 @@ import secrets
 from flask_bootstrap import Bootstrap5
 import os
 import requests
+from elevenlabs.client import ElevenLabs
+from elevenlabs.play import play
+
 
 class Base(DeclarativeBase):
     pass
@@ -19,7 +22,8 @@ app = Flask(__name__)
 secret_key = secrets.token_urlsafe(64)
 app.config['SECRET_KEY'] = secret_key
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///potatopotato.db'
-featherlessapikey = os.environ.get('FEATHERLESS_API_KEY')
+featherlessapikey = os.getenv('FEATHERLESS_API_KEY')
+elevenlabsapikey = os.getenv('ELEVENLABS_API_KEY')
 db.init_app(app)
 bootstrap = Bootstrap5(app)
 
@@ -37,6 +41,12 @@ class LoginForm(FlaskForm):
     password = PasswordField('password', validators=[DataRequired(), Length(
         min=8, max=20, message='password must be between 8 and 20 characters :D')])
     submit = SubmitField('Submit')
+
+class ThingsYouWantToTranslate(FlaskForm):
+    message = StringField('message', validators=[DataRequired()])
+    languagetyped = StringField('What language are you writing in?', validators=[DataRequired()])
+    langoutput = StringField('What language do you want to output', validators=[DataRequired()])
+    submit = SubmitField('translate')
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True, unique=True)
@@ -73,7 +83,47 @@ def index():
 
 @app.route("/home")
 def home():
+    userid = request.args.get('userid')
     return render_template("home.html")
+
+@app.route("/translation", methods=['GET', 'POST'])
+def translation():
+    form = ThingsYouWantToTranslate()
+    if form.validate_on_submit():
+        apikey = featherlessapikey
+        data = form.message.data
+        langinptu = form.languagetyped.data
+        langoutput = form.langoutput.data
+        response = requests.post(
+            url="https://api.featherless.ai/v1/chat/completions",
+            headers={
+                'Content-Type': 'application/json',
+                'Authorization': f"Bearer {apikey}"
+            },
+            json={
+                'model': "Qwen/Qwen2.5-7B-Instruct",
+                "messages": [
+                    {'role':'system',"content": "you are a helpful translator that is extremely skilled"},
+                    {'role':'user',"content": f"Hello! can you please translate {data} from {langinptu} to {langoutput}? thank you so much, but only translate it, no additional sure or ok"}
+                ]
+            }
+        )
+        message = response.json()['choices'][0]['message']['content']
+        print(message)
+        apikeyforelevenlabs = elevenlabsapikey
+        client = ElevenLabs(
+            api_key = apikeyforelevenlabs,
+        )
+        audio = client.text_to_speech.convert(
+            text=message,
+            voice_id="JBFqnCBsd6RMkjVDRZzb",
+            model_id="eleven_multilingual_v2",
+            output_format="mp3_44100_128",
+        )
+
+        play(audio)
+
+    return render_template("translation.html", form=form)
 
 with app.app_context():
     db.create_all()
