@@ -25,26 +25,28 @@
     </style>
 </head>
 <body>
-<div class="container-fluid">
-<div class="row">
-
-<!-- Sidebar -->
-<div class="col-2 sidebar">
-
-<h4 class="text-white text-center mt-3">Menu</h4>
-
-<a href="home.html">🏠 Home</a>
-<a href="speech_to_text.html">🎤 Speech to Text</a>
-<a href="text_to_speech.html">🔊 Text to Speech</a>
-<a href="history.html">💾 Saved Transcriptions</a>
-
-</div>
-
-<!-- Main Content -->
-<div class="col-10 p-4">
-
-<h1>Home</h1>
-<p>hi :D</p>
-    <a class="btn btn-primary" href="#" role="button">Translate</a>
+    <div class="container-fluid">
+        <div class="row">
+    
+    <!-- Sidebar -->
+            <div class="col-2 sidebar">
+            
+            <h4 class="text-white text-left mt-3">PolyVoice</h4>
+            
+            <a href="{{ url_for('home', userid=userid) }}">🏠 Home</a>
+            <a href="{{ url_for('picklang', userid=userid) }}">🎤 Speech to Text</a>
+            <a href="{{ url_for('translation', userid=userid) }}">🔊 Text to Speech</a>
+            <a href="{{ url_for('saved_transcriptions', userid=userid) }}">💾 Saved Transcriptions</a>
+            
+            </div>
+        
+        <!-- Main Content -->
+            <div class="col-10 p-4">
+            
+                <h1>Home</h1>
+                <p>hi :D</p>
+            </div>
+        </div>
+    </div>        
 </body>
 </html>
